@@ -1,0 +1,13 @@
+[package]
+name = "oblivious"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aes-gcm = "0.10.3"
+garble_lang = "0.2.0"
+itertools = "0.12.1"
+pqc_kyber = "0.7.1"
+rand = "0.8.5"

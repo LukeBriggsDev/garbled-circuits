@@ -79,7 +79,7 @@ impl OTEval for Circuit {
             match input {
                 (a, b) => {
                     let mut ciphertext = Vec::new();
-                    ciphertext.push(a ^ b);
+                    ciphertext.push(a & b);
                     let key: Vec<u8> = a_keys[a as usize].as_slice().iter()
                         .zip(b_keys[b as usize].as_slice().iter())
                         .map(|(&key1, &key2)| key1 ^ key2)

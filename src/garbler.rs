@@ -1,6 +1,8 @@
 use aes_gcm::{AeadInPlace, Aes256Gcm, Key, KeyInit};
 use itertools::iproduct;
-use crate::util::{AESNoncePair};
+
+use crate::util::AESNoncePair;
+
 #[derive(Copy, Clone)]
 pub struct GarblerKeyPair {
     pub zero_key: AESNoncePair,

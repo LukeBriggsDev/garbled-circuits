@@ -1,13 +1,11 @@
-use aes_gcm::{AeadCore, AeadInPlace, Aes256Gcm, Key, KeyInit, Nonce};
-use aes_gcm::aead::{Aead, AeadMutInPlace, OsRng};
+use aes_gcm::{AeadCore, AeadInPlace, Aes256Gcm, Key, KeyInit};
+use aes_gcm::aead::{Aead, OsRng};
 use garble_lang::circuit::Circuit;
-use itertools::{iproduct, Itertools};
 use pqc_kyber::{decapsulate, encapsulate, keypair, PublicKey};
-use rand::prelude::SliceRandom;
-use std::{fs, str};
-use crate::util::{AESNoncePair};
+
 use crate::evaluator::Evaluator;
 use crate::garbler::Garbler;
+use crate::util::AESNoncePair;
 
 fn oblivious(garbler: &Garbler, evaluator: &mut Evaluator) {
     // Alice part a

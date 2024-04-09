@@ -1,16 +1,17 @@
+use std::fs;
+
+use aes_gcm::{AeadCore, AeadInPlace, KeyInit};
+use aes_gcm::aead::Aead;
+use garble_lang::compile;
+use pqc_kyber::*;
+use rand::seq::SliceRandom;
+
+use crate::mpc::OTEval;
+
 mod mpc;
 mod util;
 mod evaluator;
 mod garbler;
-
-use pqc_kyber::*;
-use rand::rngs::OsRng;
-use aes_gcm::{AeadCore, AeadInPlace, Aes256Gcm, Key, KeyInit};
-use aes_gcm::aead::{Aead};
-use std::{fs, str};
-use garble_lang::compile;
-use rand::seq::SliceRandom;
-use crate::mpc::OTEval;
 
 fn main() {
     let code = fs::read_to_string("/Users/luke/Documents/University/Year 4/CSC8498 Dissertation/oblivious/src/millionaire.garble.rs").expect("FILE NOT FOUND");

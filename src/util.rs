@@ -1,6 +1,5 @@
-use aes_gcm::{AeadCore, AeadInPlace, Aes256Gcm, Key, KeyInit};
-use aes_gcm::aead::{Aead, Nonce, OsRng};
-use itertools::iproduct;
+use aes_gcm::{AeadCore, Aes256Gcm, Key, KeyInit};
+use aes_gcm::aead::{Nonce, OsRng};
 
 #[derive(Copy, Clone)]
 pub struct AESNoncePair {

@@ -30,7 +30,7 @@ impl GarblerKeyPair {
             one_key: AESNoncePair::new(),
         }
     }
-    fn get(&self, bit: u8) -> AESNoncePair {
+    pub fn get(&self, bit: u8) -> AESNoncePair {
         if (bit == 1) {
             self.one_key
         } else {
@@ -42,7 +42,7 @@ impl GarblerKeyPair {
 pub struct Garbler {
     outputs: Vec<Vec<u8>>,
     keys: Vec<GarblerKeyPair>,
-    choice: u8,
+    pub choice: u8,
     input: GarblerKeyPair,
 }
 

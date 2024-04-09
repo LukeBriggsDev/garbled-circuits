@@ -5,7 +5,9 @@ use itertools::{iproduct, Itertools};
 use pqc_kyber::{decapsulate, encapsulate, keypair, PublicKey};
 use rand::prelude::SliceRandom;
 use std::{fs, str};
-use crate::players::{AESNoncePair, Evaluator, Garbler};
+use crate::util::{AESNoncePair};
+use crate::evaluator::Evaluator;
+use crate::garbler::Garbler;
 
 fn oblivious(garbler: &Garbler, evaluator: &mut Evaluator) {
     // Alice part a
@@ -36,6 +38,7 @@ fn oblivious(garbler: &Garbler, evaluator: &mut Evaluator) {
         nonce_pairs.push(pair);
     }
 
+    // Bob part c
     let bob_key: &Key<Aes256Gcm> = &bob_key.into();
     let cipher_bob = Aes256Gcm::new(&bob_key);
 
@@ -67,7 +70,7 @@ impl OTEval for Circuit {
         let mut garbler = Garbler::new();
         let mut evaluator = Evaluator::new();
         evaluator.choice = 1;
-        garbler.choice = 1;
+        garbler.choice = 0;
         garbler.garble();
         evaluator.set_garbled_outputs(garbler.get_outputs().clone());
         evaluator.set_garble_key(garbler.get_choice_key());

@@ -1,5 +1,7 @@
 mod mpc;
-mod players;
+mod util;
+mod evaluator;
+mod garbler;
 
 use pqc_kyber::*;
 use rand::rngs::OsRng;

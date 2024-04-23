@@ -1,3 +1,3 @@
-pub fn main(a: u8, b: u8) -> u8 {
-    a + b
+pub fn main(a: bool, b: bool) -> bool {
+    a ^ b
 }

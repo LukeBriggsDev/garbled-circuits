@@ -65,7 +65,9 @@ pub trait OTEval {
 
 impl OTEval for Circuit {
     fn ot_eval(&self, inputs: &[Vec<bool>]) -> Vec<bool> {
-        garble_circuit(self, inputs).iter().map(|&x| if x != 0 {true} else {false}).collect()
+        let result = garble_circuit(self, inputs);
+        println!("{:?}", result);
+        result.iter().map(|&x| if x != 0 {true} else {false}).collect()
         // evaluator.set_garbled_outputs(garbler.get_outputs().clone());
         // evaluator.set_garble_key(garbler.get_choice_key());
         // oblivious(&garbler, &mut evaluator);

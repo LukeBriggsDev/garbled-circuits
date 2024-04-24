@@ -98,7 +98,7 @@ pub fn garble_circuit(circuit: &Circuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                 let inputs = vec![0u8, 1u8];
                 for input in inputs {
                     let input_key = wire_keys.get(*a_wire).unwrap().get(input as usize);
-                    let output_val = !input;
+                    let output_val = input ^ 1u8;
                     let out_key = wire_keys.get(output_wire).unwrap().get(output_val as usize);
                     let input_cipher = Aes256Gcm::new(&input_key.key);
                     let key_bytes = out_key.key.as_slice();

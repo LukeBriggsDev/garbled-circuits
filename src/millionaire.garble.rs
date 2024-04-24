@@ -1,15 +1,9 @@
-enum Richest {
-    IsA,
-    IsB,
-    Tie,
-}
-
-pub fn main(a: u64, b: u64) -> Richest {
+pub fn main(a: u64, b: u64) -> u8 {
     if a > b {
-        Richest::IsA
+        1u8
     } else if b > a {
-        Richest::IsB
+        2u8
     } else {
-        Richest::Tie
+        3u8
     }
 }

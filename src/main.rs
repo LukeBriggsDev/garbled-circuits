@@ -19,7 +19,10 @@ fn main() {
     let x = prg.parse_arg(0, "10u64").unwrap().as_bits();
     let y = prg.parse_arg(1, "100u64").unwrap().as_bits();
 
+    let test = prg.circuit.eval(&[x.clone(), y.clone()]);
     let output = prg.circuit.ot_eval(&[x.clone(), y.clone()]);
     let result = prg.parse_output(&output);
-    println!("{}", result.unwrap().to_string())
+    let test_result = prg.parse_output(&test);
+    println!("{}", result.unwrap().to_string());
+    println!("TARGET: {}", test_result.unwrap().to_string())
 }

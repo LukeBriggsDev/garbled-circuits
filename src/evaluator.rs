@@ -1,51 +1,141 @@
 use aes_gcm::{Aes256Gcm, Key, KeyInit};
-use aes_gcm::aead::Aead;
+use aes_gcm::aead::{Aead, Nonce};
+use garble_lang::circuit::Gate;
+use crate::garbler::{GarbledCircuit, GateType};
 
 use crate::util::AESNoncePair;
 
-pub struct Evaluator {
-    outputs: Vec<Vec<u8>>,
-    pub choice: u8,
-    choice_key: AESNoncePair,
-    garble_key: AESNoncePair,
-}
+pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
+    let mut wire_outputs = Vec::new();
+    let mut value_outputs = Vec::new();
 
-impl Evaluator {
-    pub fn new() -> Evaluator {
-        Evaluator {
-            outputs: vec![],
-            choice: 0,
-            choice_key: AESNoncePair::new(),
-            garble_key: AESNoncePair::new(),
+    let mut key_index = 0usize;
+    // Input
+    for (idx, input_length) in circuit.input_gates.iter().enumerate() {
+        for bit in 0usize..*input_length {
+            wire_outputs.push(circuit.wire_keys[key_index].get(if inputs[idx][bit] {1usize} else {0usize}));
+            value_outputs.push(None);
+            key_index += 1;
         }
     }
 
-    pub fn set_garbled_outputs(&mut self, outputs: Vec<Vec<u8>>) {
-        self.outputs = outputs;
-    }
-    pub fn set_garble_key(&mut self, garble_key: AESNoncePair) {
-        self.garble_key = garble_key;
-    }
-    pub fn set_choice_key(&mut self, choice_key: AESNoncePair) {
-        self.choice_key = choice_key
-    }
-
-    pub fn decrypt_outputs(&self) {
-        for output in &self.outputs {
-            let key: Vec<u8> = self.garble_key.key.as_slice().iter()
-                .zip(self.choice_key.key.as_slice().iter())
-                .map(|(&key1, &key2)| key1 ^ key2)
-                .collect();
-            let cipher_bob = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key.as_slice()));
-            let decrypt_a = cipher_bob.decrypt(&self.garble_key.nonce, output.as_slice());
-            match decrypt_a {
-                Ok(message) => {
-                    println!("{:?}", message.as_slice())
-                }
-                Err(message) => {
-                    println!("{}", message)
-                }
+    for (idx, gate) in circuit.gates.iter().enumerate() {
+        let a_wire;
+        let b_wire;
+        //let output_wire;
+        match gate.gate {
+            Gate::Xor(a, b) => {
+                a_wire = a;
+                b_wire = Some(b)
+            }
+            Gate::And(a, b) => {
+                a_wire = a;
+                b_wire = Some(b)
+            }
+            Gate::Not(a) => {
+                a_wire = a;
+                b_wire = None
             }
         }
+        match gate.gate {
+            Gate::Not(_) => {
+                for (output_key) in &gate.key_table {
+                    let a_key = wire_outputs[a_wire];
+                    let outer_cipher = Aes256Gcm::new(&a_key.key);
+                    let plaintext = outer_cipher.decrypt(&a_key.nonce, output_key.as_slice());
+                    match plaintext {
+                        Ok(output) => {
+                            let out_key = &output[0..32].iter().as_slice();
+                            let out_nonce = &output[32..];
+                            let key_pair = AESNoncePair {
+                                key: *Key::<Aes256Gcm>::from_slice(out_key),
+                                nonce: *Nonce::<Aes256Gcm>::from_slice(out_nonce),
+                            };
+                            wire_outputs.push(key_pair)
+
+                        }
+                        Err(err) => {
+                        }
+                    }
+                }
+            }
+            _ => {
+                for garbled_output in &gate.key_table {
+                    let a_key = wire_outputs[a_wire];
+                    let b_key = wire_outputs[b_wire.unwrap()];
+                    let outer_cipher = Aes256Gcm::new(&a_key.key);
+                    let inner_cipher = Aes256Gcm::new(&b_key.key);
+                    let inner_ciphertext = outer_cipher.decrypt(&a_key.nonce, garbled_output.as_slice());
+                    match inner_ciphertext {
+                        Ok(ciphertext)=> {
+                            let plaintext = inner_cipher.decrypt(&b_key.nonce, ciphertext.as_slice());
+                            match plaintext {
+                                Ok(output) => {
+                                    let out_key = &output[0..32];
+                                    let out_nonce = &output[32..];
+                                    let key_pair = AESNoncePair {
+                                        key: *Key::<Aes256Gcm>::from_slice(out_key),
+                                        nonce: *Nonce::<Aes256Gcm>::from_slice(out_nonce),
+                                    };
+                                    wire_outputs.push(key_pair)
+                                }
+                                Err(err) => {
+                                }
+                            }
+                        }
+                        Err(err) => {
+                        }
+                    }
+
+                }
+
+            }
+        }
+        if matches!(&gate.gate_type, GateType::OUTPUT) {
+            // Output values
+            match gate.gate {
+                Gate::Not(_) => {
+                    for (output_val) in &gate.value_table {
+                        let a_key = wire_outputs[a_wire];
+                        let outer_cipher = Aes256Gcm::new(&a_key.key);
+                        let plaintext = outer_cipher.decrypt(&a_key.nonce, output_val.as_slice());
+                        match plaintext {
+                            Ok(output) => {
+                                value_outputs.push(Some(output))
+                            }
+                            Err(err) => {
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    for garbled_output in &gate.value_table {
+                        let a_key = wire_outputs[a_wire];
+                        let b_key = wire_outputs[b_wire.unwrap()];
+                        let outer_cipher = Aes256Gcm::new(&a_key.key);
+                        let inner_cipher = Aes256Gcm::new(&b_key.key);
+                        let inner_ciphertext = outer_cipher.decrypt(&a_key.nonce, garbled_output.as_slice());
+                        match inner_ciphertext {
+                            Ok(ciphertext) => {
+                                let plaintext = inner_cipher.decrypt(&b_key.nonce, ciphertext.as_slice());
+                                match plaintext {
+                                    Ok(output) => {
+                                        value_outputs.push(Some(output))
+                                    }
+                                    Err(err) => {
+                                    }
+                                }
+                            }
+                            Err(err) => {
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            value_outputs.push(None);
+        }
     }
+    let output: Vec<u8> = circuit.output_gates.iter().map(|x| value_outputs[*x].as_ref().unwrap()[0]).collect();
+    return output
 }

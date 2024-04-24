@@ -2,8 +2,8 @@ use aes_gcm::{AeadCore, AeadInPlace, Aes256Gcm, Key, KeyInit};
 use aes_gcm::aead::{Aead, OsRng};
 use garble_lang::circuit::Circuit;
 use pqc_kyber::{decapsulate, encapsulate, keypair, PublicKey};
+use crate::evaluator::evaluate;
 
-use crate::evaluator::Evaluator;
 use crate::garbler::{garble_circuit};
 use crate::util::AESNoncePair;
 
@@ -65,8 +65,9 @@ pub trait OTEval {
 
 impl OTEval for Circuit {
     fn ot_eval(&self, inputs: &[Vec<bool>]) -> Vec<bool> {
-        let result = garble_circuit(self, inputs);
-        println!("{:?}", result);
+        let garbled_circuit = garble_circuit(self);
+        let result = evaluate(&garbled_circuit, inputs);
+
         result.iter().map(|&x| if x != 0 {true} else {false}).collect()
         // evaluator.set_garbled_outputs(garbler.get_outputs().clone());
         // evaluator.set_garble_key(garbler.get_choice_key());

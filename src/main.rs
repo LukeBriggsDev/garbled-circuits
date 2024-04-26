@@ -1,11 +1,7 @@
 use std::fs;
 use std::time::Instant;
 
-use aes_gcm::{AeadCore, AeadInPlace, KeyInit};
-use aes_gcm::aead::Aead;
 use garble_lang::compile;
-use pqc_kyber::*;
-use rand::seq::SliceRandom;
 
 use crate::mpc::OTEval;
 

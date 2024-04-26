@@ -1,37 +1,36 @@
-use aes_gcm::{AeadInPlace, Aes256Gcm, Key, KeyInit};
-use aes_gcm::aead::{Aead, Nonce};
-use aes_gcm::aes::Aes256;
-use garble_lang::circuit::{Circuit, Gate, GateIndex};
+use aes_gcm::{Aes256Gcm, KeyInit};
+use aes_gcm::aead::Aead;
+use garble_lang::circuit::{Circuit, Gate};
 use itertools::iproduct;
-use crate::garbler::GateType::{INTERNAL, OUTPUT};
 
+use crate::garbler::GateType::{INTERNAL, OUTPUT};
 use crate::util::AESNoncePair;
 
 pub struct GarbledCircuit {
     pub input_gates: Vec<usize>,
     pub output_gates: Vec<usize>,
     pub wire_keys: Vec<WireKeyPair>,
-    pub gates: Vec<GarbledGate>
+    pub gates: Vec<GarbledGate>,
 }
 
 
 #[derive(Debug)]
 struct GarbleOutput {
     key_output: Option<AESNoncePair>,
-    value_output: Option<Vec<u8>>
+    value_output: Option<Vec<u8>>,
 }
 
 #[derive(Debug)]
 pub struct WireKeyPair {
     zero_key: AESNoncePair,
-    one_key: AESNoncePair
+    one_key: AESNoncePair,
 }
 
 impl WireKeyPair {
     pub fn new() -> WireKeyPair {
         WireKeyPair {
             zero_key: AESNoncePair::new(),
-            one_key: AESNoncePair::new()
+            one_key: AESNoncePair::new(),
         }
     }
 
@@ -47,7 +46,7 @@ impl WireKeyPair {
 #[derive(Debug)]
 pub enum GateType {
     INTERNAL,
-    OUTPUT
+    OUTPUT,
 }
 
 #[derive(Debug)]
@@ -56,7 +55,7 @@ pub struct GarbledGate {
     pub gate: Gate,
     pub key_table: Vec<Vec<u8>>,
     pub gate_type: GateType,
-    pub value_table: Vec<Vec<u8>>
+    pub value_table: Vec<Vec<u8>>,
 }
 
 pub fn garble_circuit(circuit: &Circuit) -> GarbledCircuit {
@@ -74,7 +73,6 @@ pub fn garble_circuit(circuit: &Circuit) -> GarbledCircuit {
 
     // Garble tables
     for (idx, gate) in circuit.gates.iter().enumerate() {
-
         let mut output_key_table = Vec::new();
         let mut output_value_table = Vec::new();
         let a_wire;
@@ -120,7 +118,7 @@ pub fn garble_circuit(circuit: &Circuit) -> GarbledCircuit {
                         output_value_table.push(input_cipher.encrypt(&input_key.nonce, value_output.as_slice()).unwrap());
                     }
                 }
-            },
+            }
             _ => {
                 let inputs: Vec<(u8, u8)> = iproduct!(0..2u8, 0..2u8).collect();
                 for (val_a, val_b) in inputs {
@@ -141,13 +139,13 @@ pub fn garble_circuit(circuit: &Circuit) -> GarbledCircuit {
                     key_output.extend_from_slice(nonce_bytes);
                     let inner_ciphertext = b_cipher.encrypt(&b_key.nonce, key_output.as_slice()).unwrap();
                     let a_cipher = Aes256Gcm::new(&a_key.key);
-                    let outer_ciphertext = a_cipher.encrypt(&a_key.nonce,inner_ciphertext.as_slice()).unwrap();
+                    let outer_ciphertext = a_cipher.encrypt(&a_key.nonce, inner_ciphertext.as_slice()).unwrap();
                     output_key_table.push(outer_ciphertext);
                     if circuit.output_gates.contains(&output_wire) {
                         let value_output = vec![output_val];
                         let inner_ciphertext = b_cipher.encrypt(&b_key.nonce, value_output.as_slice()).unwrap();
                         let a_cipher = Aes256Gcm::new(&a_key.key);
-                        let outer_ciphertext = a_cipher.encrypt(&a_key.nonce,inner_ciphertext.as_slice()).unwrap(); //TODO: Use different keys for val and not val
+                        let outer_ciphertext = a_cipher.encrypt(&a_key.nonce, inner_ciphertext.as_slice()).unwrap(); //TODO: Use different keys for val and not val
                         output_value_table.push(outer_ciphertext)
                     }
                 }
@@ -158,14 +156,13 @@ pub fn garble_circuit(circuit: &Circuit) -> GarbledCircuit {
             gate: gate.clone(),
             key_table: output_key_table,
             value_table: output_value_table,
-            gate_type
+            gate_type,
         })
     }
     return GarbledCircuit {
         input_gates: circuit.input_gates.clone(),
         wire_keys,
         gates: garbled_gates,
-        output_gates: circuit.output_gates.clone()
-    }
-
+        output_gates: circuit.output_gates.clone(),
+    };
 }

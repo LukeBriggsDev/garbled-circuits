@@ -1,9 +1,9 @@
 use aes_gcm::{Aes256Gcm, Key, KeyInit};
 use aes_gcm::aead::{Aead, Nonce};
 use garble_lang::circuit::Gate;
+
 use crate::garbler::{GarbledCircuit, GateType};
 use crate::oblivious::oblivious;
-
 use crate::util::AESNoncePair;
 
 pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
@@ -22,7 +22,7 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                 let oblivious_result = oblivious(
                     (circuit.wire_keys[key_index].get(0).to_vec(),
                      circuit.wire_keys[key_index].get(1).to_vec()),
-                    inputs[idx][bit]
+                    inputs[idx][bit],
                 );
                 wire_outputs.push(AESNoncePair::from_slice(oblivious_result.as_slice()));
             }
@@ -31,7 +31,7 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
         }
     }
 
-    for (idx, gate) in circuit.gates.iter().enumerate() {
+    for gate in &circuit.gates {
         let a_wire;
         let b_wire;
         //let output_wire;
@@ -51,7 +51,7 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
         }
         match gate.gate {
             Gate::Not(_) => {
-                for (output_key) in &gate.key_table {
+                for output_key in &gate.key_table {
                     let a_key = wire_outputs[a_wire];
                     let outer_cipher = Aes256Gcm::new(&a_key.key);
                     let plaintext = outer_cipher.decrypt(&a_key.nonce, output_key.as_slice());
@@ -60,8 +60,7 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                             let key_pair = AESNoncePair::from_slice(output.as_slice());
                             wire_outputs.push(key_pair)
                         }
-                        Err(_) => {
-                        }
+                        Err(_) => {}
                     }
                 }
             }
@@ -73,7 +72,7 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                     let inner_cipher = Aes256Gcm::new(&b_key.key);
                     let inner_ciphertext = outer_cipher.decrypt(&a_key.nonce, garbled_output.as_slice());
                     match inner_ciphertext {
-                        Ok(ciphertext)=> {
+                        Ok(ciphertext) => {
                             let plaintext = inner_cipher.decrypt(&b_key.nonce, ciphertext.as_slice());
                             match plaintext {
                                 Ok(output) => {
@@ -85,23 +84,19 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                                     };
                                     wire_outputs.push(key_pair)
                                 }
-                                Err(err) => {
-                                }
+                                Err(_) => {}
                             }
                         }
-                        Err(err) => {
-                        }
+                        Err(_) => {}
                     }
-
                 }
-
             }
         }
         if matches!(&gate.gate_type, GateType::OUTPUT) {
             // Output values
             match gate.gate {
                 Gate::Not(_) => {
-                    for (output_val) in &gate.value_table {
+                    for output_val in &gate.value_table {
                         let a_key = wire_outputs[a_wire];
                         let outer_cipher = Aes256Gcm::new(&a_key.key);
                         let plaintext = outer_cipher.decrypt(&a_key.nonce, output_val.as_slice());
@@ -109,8 +104,7 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                             Ok(output) => {
                                 value_outputs.push(Some(output))
                             }
-                            Err(err) => {
-                            }
+                            Err(_) => {}
                         }
                     }
                 }
@@ -128,12 +122,10 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                                     Ok(output) => {
                                         value_outputs.push(Some(output))
                                     }
-                                    Err(err) => {
-                                    }
+                                    Err(_) => {}
                                 }
                             }
-                            Err(err) => {
-                            }
+                            Err(_) => {}
                         }
                     }
                 }
@@ -143,5 +135,5 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
         }
     }
     let output: Vec<u8> = circuit.output_gates.iter().map(|x| value_outputs[*x].as_ref().unwrap()[0]).collect();
-    return output
+    return output;
 }

@@ -1,4 +1,5 @@
 use std::fs;
+use std::time::Instant;
 
 use aes_gcm::{AeadCore, AeadInPlace, KeyInit};
 use aes_gcm::aead::Aead;
@@ -12,6 +13,7 @@ mod mpc;
 mod util;
 mod evaluator;
 mod garbler;
+mod oblivious;
 
 fn main() {
     let code = fs::read_to_string("/Users/luke/Documents/University/Year 4/CSC8498 Dissertation/oblivious/src/millionaire.garble.rs").expect("FILE NOT FOUND");
@@ -20,7 +22,10 @@ fn main() {
     let y = prg.parse_arg(1, "11i16").unwrap().as_bits();
 
     let test = prg.circuit.eval(&[x.clone(), y.clone()]);
+    let now = Instant::now();
     let output = prg.circuit.ot_eval(&[x.clone(), y.clone()]);
+    let elapsed = now.elapsed();
+    println!("Time Elapsed: {:?}", elapsed);
     let result = prg.parse_output(&output);
     let test_result = prg.parse_output(&test);
     println!("{}", result.unwrap().to_string());

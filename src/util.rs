@@ -23,4 +23,15 @@ impl AESNoncePair {
             nonce: Aes256Gcm::generate_nonce(&mut OsRng),
         }
     }
+    pub fn to_vec(&self) -> Vec<u8> {
+        [self.key.as_slice(), self.nonce.as_slice()].concat()
+    }
+    pub fn from_slice(slice: &[u8]) -> AESNoncePair {
+        let out_key = &slice[0..32];
+        let out_nonce = &slice[32..];
+        AESNoncePair {
+            key: *Key::<Aes256Gcm>::from_slice(out_key),
+            nonce: *Nonce::<Aes256Gcm>::from_slice(out_nonce),
+        }
+    }
 }

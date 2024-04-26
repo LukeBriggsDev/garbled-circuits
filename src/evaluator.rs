@@ -2,6 +2,7 @@ use aes_gcm::{Aes256Gcm, Key, KeyInit};
 use aes_gcm::aead::{Aead, Nonce};
 use garble_lang::circuit::Gate;
 use crate::garbler::{GarbledCircuit, GateType};
+use crate::oblivious::oblivious;
 
 use crate::util::AESNoncePair;
 
@@ -13,7 +14,18 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
     // Input
     for (idx, input_length) in circuit.input_gates.iter().enumerate() {
         for bit in 0usize..*input_length {
-            wire_outputs.push(circuit.wire_keys[key_index].get(if inputs[idx][bit] {1usize} else {0usize}));
+            if idx == 0 {
+                // Garbler Input
+                wire_outputs.push(circuit.wire_keys[key_index].get(if inputs[idx][bit] { 1usize } else { 0usize }));
+            } else {
+                // Evaluator Input
+                let oblivious_result = oblivious(
+                    (circuit.wire_keys[key_index].get(0).to_vec(),
+                     circuit.wire_keys[key_index].get(1).to_vec()),
+                    inputs[idx][bit]
+                );
+                wire_outputs.push(AESNoncePair::from_slice(oblivious_result.as_slice()));
+            }
             value_outputs.push(None);
             key_index += 1;
         }
@@ -45,16 +57,10 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                     let plaintext = outer_cipher.decrypt(&a_key.nonce, output_key.as_slice());
                     match plaintext {
                         Ok(output) => {
-                            let out_key = &output[0..32].iter().as_slice();
-                            let out_nonce = &output[32..];
-                            let key_pair = AESNoncePair {
-                                key: *Key::<Aes256Gcm>::from_slice(out_key),
-                                nonce: *Nonce::<Aes256Gcm>::from_slice(out_nonce),
-                            };
+                            let key_pair = AESNoncePair::from_slice(output.as_slice());
                             wire_outputs.push(key_pair)
-
                         }
-                        Err(err) => {
+                        Err(_) => {
                         }
                     }
                 }

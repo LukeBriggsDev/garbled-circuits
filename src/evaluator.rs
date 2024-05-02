@@ -134,6 +134,11 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
             value_outputs.push(None);
         }
     }
-    let output: Vec<u8> = circuit.output_gates.iter().map(|x| value_outputs[*x].as_ref().unwrap()[0]).collect();
+    let output: Vec<u8> = circuit.output_gates
+        .iter()
+        .map(|x| value_outputs[*x]
+            .as_ref()
+            .unwrap()[0])
+        .collect();
     return output;
 }

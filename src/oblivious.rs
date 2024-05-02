@@ -51,15 +51,14 @@ pub fn oblivious(messages: (Vec<u8>, Vec<u8>), choice: bool) -> Vec<u8> {
 
     // receiver
     let cipher = Aes256Gcm::new(&nonce_pair.key);
-    for ciphertext in ret {
-        match cipher.decrypt(&nonce_pair.nonce, ciphertext.as_ref()) {
-            Ok(message) => {
-                return message;
-            }
-            Err(_) => {
-                continue;
-            }
+    match cipher.decrypt(&nonce_pair.nonce, ret[if choice {1} else {0}].as_ref()) {
+        Ok(message) => {
+            return message;
+        }
+        Err(err) => {
+            println!("{}", err);
+            panic!("NO MESSAGE DECRYPTED");
         }
     }
-    panic!("NO MESSAGE DECRYPTED")
+
 }

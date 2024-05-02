@@ -14,11 +14,14 @@ mod oblivious;
 fn main() {
     let code = fs::read_to_string("/Users/luke/Documents/University/Year 4/CSC8498 Dissertation/oblivious/src/millionaire.garble.rs").expect("FILE NOT FOUND");
     let prg = compile(code.as_str()).map_err(|e| e.prettify(&code)).unwrap();
-    let x = prg.parse_arg(0, "9i16").unwrap().as_bits();
-    let y = prg.parse_arg(1, "11i16").unwrap().as_bits();
+    let x = prg.parse_arg(0, "true").unwrap().as_bits();
+    let y = prg.parse_arg(1, "false").unwrap().as_bits();
 
     let test = prg.circuit.eval(&[x.clone(), y.clone()]);
     let now = Instant::now();
+    println!("{:?}", prg.circuit.gates);
+    println!("{:?}", prg.circuit.input_gates);
+    println!("{:?}", prg.circuit.output_gates);
     let output = prg.circuit.ot_eval(&[x.clone(), y.clone()]);
     let elapsed = now.elapsed();
     println!("Time Elapsed: {:?}", elapsed);

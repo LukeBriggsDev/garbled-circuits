@@ -58,7 +58,8 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                     match plaintext {
                         Ok(output) => {
                             let key_pair = AESNoncePair::from_slice(output.as_slice());
-                            wire_outputs.push(key_pair)
+                            wire_outputs.push(key_pair);
+                            break;
                         }
                         Err(_) => {}
                     }
@@ -82,7 +83,8 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                                         key: *Key::<Aes256Gcm>::from_slice(out_key),
                                         nonce: *Nonce::<Aes256Gcm>::from_slice(out_nonce),
                                     };
-                                    wire_outputs.push(key_pair)
+                                    wire_outputs.push(key_pair);
+                                    break;
                                 }
                                 Err(_) => {}
                             }

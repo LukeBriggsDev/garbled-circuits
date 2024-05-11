@@ -2,6 +2,8 @@ use aes_gcm::{Aes256Gcm, KeyInit};
 use aes_gcm::aead::Aead;
 use garble_lang::circuit::{Circuit, Gate};
 use itertools::iproduct;
+use rand::rngs::OsRng;
+use rand::seq::SliceRandom;
 
 use crate::garbler::GateType::{INTERNAL, OUTPUT};
 use crate::util::AESNoncePair;
@@ -68,7 +70,7 @@ pub fn garble_circuit(circuit: &Circuit) -> GarbledCircuit {
     for _ in 0..circuit.gates.len() {
         wire_keys.push(WireKeyPair::new());
     }
-
+    println!("Wire keys: {}", wire_keys.len());
     let mut garbled_gates = Vec::new();
 
     // Garble tables
@@ -151,6 +153,8 @@ pub fn garble_circuit(circuit: &Circuit) -> GarbledCircuit {
                 }
             }
         }
+        output_value_table.shuffle(&mut OsRng);
+        output_key_table.shuffle(&mut OsRng);
         garbled_gates.push(GarbledGate {
             output_wire,
             gate: gate.clone(),

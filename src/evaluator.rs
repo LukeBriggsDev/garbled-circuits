@@ -104,7 +104,8 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                         let plaintext = outer_cipher.decrypt(&a_key.nonce, output_val.as_slice());
                         match plaintext {
                             Ok(output) => {
-                                value_outputs.push(Some(output))
+                                value_outputs.push(Some(output));
+                                break
                             }
                             Err(_) => {}
                         }
@@ -122,7 +123,8 @@ pub fn evaluate(circuit: &GarbledCircuit, inputs: &[Vec<bool>]) -> Vec<u8> {
                                 let plaintext = inner_cipher.decrypt(&b_key.nonce, ciphertext.as_slice());
                                 match plaintext {
                                     Ok(output) => {
-                                        value_outputs.push(Some(output))
+                                        value_outputs.push(Some(output));
+                                        break
                                     }
                                     Err(_) => {}
                                 }
